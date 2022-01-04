@@ -1,0 +1,1 @@
+sudo docker run -it --mount type=bind,source="$(pwd)",target=/app clothes_detection:v1

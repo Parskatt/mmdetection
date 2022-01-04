@@ -69,7 +69,8 @@ class YOLOX(SingleStageDetector):
                       img_metas,
                       gt_bboxes,
                       gt_labels,
-                      gt_bboxes_ignore=None):
+                      gt_bboxes_ignore=None,
+                      gt_masks=None):
         """
         Args:
             img (Tensor): Input images of shape (N, C, H, W).

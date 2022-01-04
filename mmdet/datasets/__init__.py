@@ -7,7 +7,6 @@ from .custom import CustomDataset
 from .dataset_wrappers import (ClassBalancedDataset, ConcatDataset,
                                MultiImageMixDataset, RepeatDataset)
 from .deepfashion import DeepFashionDataset
-from .deepfashion2 import DeepFashionDataset2
 from .lvis import LVISDataset, LVISV1Dataset, LVISV05Dataset
 from .samplers import DistributedGroupSampler, DistributedSampler, GroupSampler
 from .utils import (NumClassCheckHook, get_loading_pipeline,
