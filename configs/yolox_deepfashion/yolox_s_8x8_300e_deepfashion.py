@@ -1,6 +1,6 @@
 _base_ = ['../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py']
 
-img_scale = (640, 640)
+img_scale = (480, 480)
 
 # model settings
 model = dict(
@@ -15,7 +15,7 @@ model = dict(
         out_channels=128,
         num_csp_blocks=1),
     bbox_head=dict(
-        type='YOLOXHead', num_classes=13, in_channels=128, feat_channels=128),
+        type='YOLOXHead', num_classes=15, in_channels=128, feat_channels=128),
     train_cfg=dict(assigner=dict(type='SimOTAAssigner', center_radius=2.5)),
     # In order to align the source code, the threshold of the val phase is
     # 0.01, and the threshold of the test phase is 0.001.
@@ -29,7 +29,7 @@ img_norm_cfg = dict(
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', with_bbox=True, with_mask=True),
-    dict(type='Resize', img_scale=(750, 1101), keep_ratio=True),
+    dict(type='Resize', img_scale=img_scale, keep_ratio=True),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='Pad', size_divisor=32),
@@ -40,15 +40,18 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(750, 1101),
+        img_scale=img_scale,
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
             dict(type='RandomFlip'),
+            dict(
+                type='Pad',
+                pad_to_square=True,
+                pad_val=dict(img=(114.0, 114.0, 114.0))),
             dict(type='Normalize', **img_norm_cfg),
-            dict(type='Pad', size_divisor=32),
-            dict(type='ImageToTensor', keys=['img']),
-            dict(type='Collect', keys=['img']),
+            dict(type='DefaultFormatBundle'),
+            dict(type='Collect', keys=['img'])
         ])
 ]
 data = dict(
@@ -70,26 +73,28 @@ data = dict(
         type=dataset_type,
         ann_file=
         'json_for_test/keypoints_test_information.json',
-        img_prefix='train/image/',
+        img_prefix='test/image/',
         pipeline=test_pipeline,
         data_root=data_root))
 evaluation = dict(interval=5, metric=['bbox', 'segm'])
 
 # optimizer
 # default 8 gpu
+num_gpu = 1
+default_gpu = 8
 optimizer = dict(
     type='SGD',
-    lr=0.01,
+    lr=0.01*num_gpu/default_gpu,
     momentum=0.9,
     weight_decay=5e-4,
     nesterov=True,
     paramwise_cfg=dict(norm_decay_mult=0., bias_decay_mult=0.))
 optimizer_config = dict(grad_clip=None)
 
-max_epochs = 300
-num_last_epochs = 15
-resume_from = None
-interval = 10
+max_epochs = 10
+num_last_epochs = 10
+resume_from = None#"work_dirs/yolox_s_8x8_300e_deepfashion/latest.pth"
+interval = 1
 
 # learning policy
 lr_config = dict(
@@ -99,12 +104,12 @@ lr_config = dict(
     by_epoch=False,
     warmup_by_epoch=True,
     warmup_ratio=1,
-    warmup_iters=5,  # 5 epoch
+    warmup_iters=1,  # 1 epoch
     num_last_epochs=num_last_epochs,
     min_lr_ratio=0.05)
 
 runner = dict(type='EpochBasedRunner', max_epochs=max_epochs)
-
+load_from = "https://download.openmmlab.com/mmdetection/v2.0/yolox/yolox_s_8x8_300e_coco/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth"
 custom_hooks = [
     dict(
         type='YOLOXModeSwitchHook',
